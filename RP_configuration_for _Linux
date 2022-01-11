@@ -1,0 +1,94 @@
+				###Reverse proxy configuration with apache ###
+	
+##Pre-requisites
+
+		sudo yum install httpd
+
+##Modules needed for using Apache as a reverse proxy
+
+1- mod_proxy – it is the main module responsible for redirecting the connections,
+
+2- mod_proxy_http – add the support for proxying HTTP connections
+
+##Check if the following modules are installed & working with the following command,
+
+		httpd -M
+	 
+##This command will generate the list of modules that are currently working. 
+ If these modules are not on the list, 
+ then we need to enable them by making the following entry in httpd.conf,
+		
+		sudo vim /etc/httpd/conf/httpd.conf
+		
+	LoadModule proxy_module modules/mod_proxy.so
+	LoadModule proxy_http_module modules/mod_proxy_http.so
+	
+Now save the file & exit, then restart the apache service to implement the changes made,
+
+		sudo systemctl restart httpd
+		
+###Configuring Backend test server###
+	
+	We have also installed apache on the backend server & will now add a simple html page for testing purposes,
+
+		sudo vim /var/www/html/index.html
+
+Save the file & exit. Now restart the apache service to implement the changes made. 
+Next test the page from a browser on the local or remote system with the following URL,
+
+		http://192.168.1.50
+		
+	where 192.168.1.50 is the IP address of the backend server.
+	
+####Or Go to the httpd.conf file and make the changes for listening port and the root of the site####
+	
+#Configuring a simple reverse proxy
+
+ After the backend server is ready, the next thing to do is to make our front end i.e. reverse proxy ready. 
+ To do so, we need to make the following entry in the apache configuration file i.e. httpd.conf,
+
+	***make sure that this line should be commented in httpd.conf***
+	
+				#IncludeOptional conf.d/*.conf
+
+write these lines in the file
+
+		sudo vim /etc/httpd/conf/httpd.conf
+
+		<VirtualHost *:80>
+
+		 ProxyPreserveHost On
+		 
+		 ProxyPass / http://192.168.1.50/
+		 
+		 ProxyPassReverse / http://192.168.1.50/
+
+		</VirtualHost>
+
+here, we are telling with the 'ProxyPass' parameter that whatever request s received at '/', redirect it to 'http://192.168.1.50/'. 
+Now restart the apache services to implement the changes,
+
+		sudo systemctl restart httpd
+
+Note:- We can also add port numbers here, for example, we are using this reverse proxy with tomcat as a backend server, 
+we can also this frontend server as a reverse proxy for apache tomcat with the following entries in httpd.conf,
+
+		<VirtualHost *:80>
+		
+		 ProxyPreserveHost On
+		 
+		 ProxyPass / http://192.168.1.50:8080/test/
+		 
+		 ProxyPassReverse / http://192.168.1.50:8080/test/
+		
+		</VirtualHost>
+
+Testing the reverse proxy
+To test the reverse proxy, open the following URL from a web browser,
+
+		http://192.168.1.100/
+
+here 192.168.1.100 is the IP address of the reverse proxy server. 
+As soon as the URL loads up, we can then see the page that was hosted on the backend server. 
+This shows that our reverse proxy is correctly configured & working.
+
